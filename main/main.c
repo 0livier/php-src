@@ -1129,7 +1129,8 @@ static void php_error_process_cb(PHP_ERROR_CB_FUNC_ARGS)
    extended error handling function */
 static void php_error_cb(PHP_ERROR_CB_FUNC_ARGS)
 {
-	char *buffer;
+	char *buffer, *error_type_str;
+
 	int buffer_len, display;
 
 	buffer_len = (int)vspprintf(&buffer, PG(log_errors_max_len), format, args);
@@ -1209,8 +1210,6 @@ static void php_error_cb(PHP_ERROR_CB_FUNC_ARGS)
 	/* display/log the error if necessary */
 	if (display && (EG(error_reporting) & type || (type & E_CORE))
 		&& (PG(log_errors) || PG(display_errors) || (!module_initialized))) {
-		char *error_type_str;
-
 		switch (type) {
 			case E_ERROR:
 			case E_CORE_ERROR:
