@@ -991,6 +991,7 @@ PHPAPI void php_html_puts(const char *str, size_t size)
 #define PHP_ERROR_CB_FUNC_ARGS int type, const char *error_filename, const uint error_lineno, const char *format, va_list args, const char *error_type_str
 #define PHP_ERROR_CB_FUNC_ARGS_PASSTHRU type, error_filename, error_lineno, format, args, error_type_str
 
+/* {{{ php_error_display_cb */
 static void php_error_display_cb(PHP_ERROR_CB_FUNC_ARGS)
 {
 	if (PG(display_errors) && ((module_initialized && !PG(during_request_startup)) || (PG(display_startup_errors)))) {
@@ -1044,8 +1045,9 @@ static void php_error_display_cb(PHP_ERROR_CB_FUNC_ARGS)
 	}
 #endif
 }
+/* }}} */
 
-
+/* {{{ php_error_log_cb */
 static void php_error_log_cb(PHP_ERROR_CB_FUNC_ARGS)
 {
 	if (!module_initialized || PG(log_errors)) {
@@ -1060,7 +1062,9 @@ static void php_error_log_cb(PHP_ERROR_CB_FUNC_ARGS)
 		efree(log_buffer);
 	}
 }
+/* }}} */
 
+/* {{{ php_error_process_cb */
 static void php_error_process_cb(PHP_ERROR_CB_FUNC_ARGS)
 {
 	/* Bail out if we can't recover */
@@ -1121,6 +1125,7 @@ static void php_error_process_cb(PHP_ERROR_CB_FUNC_ARGS)
 		}
 	}
 }
+/* }}} */
 
 /* {{{ php_error_cb
    extended error handling function */
