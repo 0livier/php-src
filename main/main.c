@@ -1206,10 +1206,9 @@ static void php_error_cb(PHP_ERROR_CB_FUNC_ARGS)
 		}
 	}
 
-    /* display/log the error if necessary */
+	/* display/log the error if necessary */
 	if (display && (EG(error_reporting) & type || (type & E_CORE))
 		&& (PG(log_errors) || PG(display_errors) || (!module_initialized))) {
-
 		char *error_type_str;
 
 		switch (type) {
