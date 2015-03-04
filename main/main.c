@@ -1041,8 +1041,9 @@ static void php_error_display_cb(PHP_ERROR_CB_FUNC_ARGS)
 			break;
 		}
 		zend_output_debug_string(trigger_break, "%s(%d) : %s - %s", error_filename, error_lineno, error_type_str, PG(last_error_message));
-	}}
+	}
 #endif
+}
 
 
 static void php_error_log_cb(PHP_ERROR_CB_FUNC_ARGS)
