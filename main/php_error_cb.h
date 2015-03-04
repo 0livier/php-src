@@ -22,8 +22,10 @@
 #ifndef PHP_ERROR_CB_H
 #define PHP_ERROR_CB_H
 
-#define PHP_ERROR_CB_FUNC_ARGS int type, const char *error_filename, const uint error_lineno, const char *format, va_list args, const char *error_type_str
-#define PHP_ERROR_CB_FUNC_ARGS_PASSTHRU type, error_filename, error_lineno, format, args, error_type_str
+#define PHP_ERROR_CB_FUNC_ARGS int type, const char *error_filename, const uint error_lineno, const char *format, va_list args
+#define PHP_ERROR_CB_FUNC_ARGS_PASSTHRU type, error_filename, error_lineno, format, args
+#define PHP_ERROR_CB_HOOK_ARGS PHP_ERROR_CB_FUNC_ARGS, const char *error_type_str
+#define PHP_ERROR_CB_HOOK_ARGS_PASSTHRU PHP_ERROR_CB_FUNC_ARGS_PASSTHRU, error_type_str
 
 #endif
 

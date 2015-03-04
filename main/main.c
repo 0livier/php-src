@@ -990,7 +990,7 @@ PHPAPI void php_html_puts(const char *str, size_t size)
 /* }}} */
 
 /* {{{ php_error_display_cb */
-static void php_error_display_cb(PHP_ERROR_CB_FUNC_ARGS)
+static void php_error_display_cb(PHP_ERROR_CB_HOOK_ARGS)
 {
 	if (PG(display_errors) && ((module_initialized && !PG(during_request_startup)) || (PG(display_startup_errors)))) {
 		if (PG(xmlrpc_errors)) {
@@ -1046,7 +1046,7 @@ static void php_error_display_cb(PHP_ERROR_CB_FUNC_ARGS)
 /* }}} */
 
 /* {{{ php_error_log_cb */
-static void php_error_log_cb(PHP_ERROR_CB_FUNC_ARGS)
+static void php_error_log_cb(PHP_ERROR_CB_HOOK_ARGS)
 {
 	if (!module_initialized || PG(log_errors)) {
 		char *log_buffer;
@@ -1063,7 +1063,7 @@ static void php_error_log_cb(PHP_ERROR_CB_FUNC_ARGS)
 /* }}} */
 
 /* {{{ php_error_process_cb */
-static void php_error_process_cb(PHP_ERROR_CB_FUNC_ARGS)
+static void php_error_process_cb(PHP_ERROR_CB_HOOK_ARGS)
 {
 	/* Bail out if we can't recover */
 	switch (type) {
@@ -1245,11 +1245,11 @@ static void php_error_cb(PHP_ERROR_CB_FUNC_ARGS)
 				break;
 		}
 
-		php_error_display_cb(PHP_ERROR_CB_FUNC_ARGS_PASSTHRU);
-		php_error_log_cb(PHP_ERROR_CB_FUNC_ARGS_PASSTHRU);
+		php_error_display_cb(PHP_ERROR_CB_HOOK_ARGS_PASSTHRU);
+		php_error_log_cb(PHP_ERROR_CB_HOOK_ARGS_PASSTHRU);
 	}
 
-	php_error_process_cb(PHP_ERROR_CB_FUNC_ARGS_PASSTHRU);
+	php_error_process_cb(PHP_ERROR_CB_HOOK_ARGS_PASSTHRU);
 
 	if (!display) {
 		efree(buffer);
