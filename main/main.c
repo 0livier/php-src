@@ -89,6 +89,7 @@
 #include "php_ticks.h"
 #include "php_streams.h"
 #include "php_open_temporary_file.h"
+#include "php_error_cb.h"
 
 #include "SAPI.h"
 #include "rfc1867.h"
@@ -987,9 +988,6 @@ PHPAPI void php_html_puts(const char *str, size_t size)
 	zend_html_puts(str, size);
 }
 /* }}} */
-
-#define PHP_ERROR_CB_FUNC_ARGS int type, const char *error_filename, const uint error_lineno, const char *format, va_list args, const char *error_type_str
-#define PHP_ERROR_CB_FUNC_ARGS_PASSTHRU type, error_filename, error_lineno, format, args, error_type_str
 
 /* {{{ php_error_display_cb */
 static void php_error_display_cb(PHP_ERROR_CB_FUNC_ARGS)
