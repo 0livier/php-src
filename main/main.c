@@ -89,7 +89,6 @@
 #include "php_ticks.h"
 #include "php_streams.h"
 #include "php_open_temporary_file.h"
-#include "php_error_cb.h"
 
 #include "SAPI.h"
 #include "rfc1867.h"

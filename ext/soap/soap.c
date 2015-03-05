@@ -23,7 +23,6 @@
 #include "config.h"
 #endif
 #include "php_soap.h"
-#include "php_error_cb.h"
 #if HAVE_PHP_SESSION && !defined(COMPILE_DL_SESSION)
 #include "ext/session/php_session.h"
 #endif

@@ -41,6 +41,11 @@
 #define E_ALL (E_ERROR | E_WARNING | E_PARSE | E_NOTICE | E_CORE_ERROR | E_CORE_WARNING | E_COMPILE_ERROR | E_COMPILE_WARNING | E_USER_ERROR | E_USER_WARNING | E_USER_NOTICE | E_RECOVERABLE_ERROR | E_DEPRECATED | E_USER_DEPRECATED | E_STRICT)
 #define E_CORE (E_CORE_ERROR | E_CORE_WARNING)
 
+#define ZEND_ERROR_CB_FUNC_ARGS int type, const char *error_filename, const uint error_lineno, const char *format, va_list args
+#define ZEND_ERROR_CB_FUNC_ARGS_PASSTHRU type, error_filename, error_lineno, format, args
+#define ZEND_ERROR_CB_HOOK_ARGS ZEND_ERROR_CB_FUNC_ARGS, const char *error_type_str
+#define ZEND_ERROR_CB_HOOK_ARGS_PASSTHRU ZEND_ERROR_CB_FUNC_ARGS_PASSTHRU, error_type_str
+
 #endif /* ZEND_ERRORS_H */
 
 /*

@@ -39,7 +39,6 @@
 #include "zend_variables.h"
 #include "zend_iterators.h"
 #include "zend_stream.h"
-#include "php_error_cb.h"
 
 #ifdef ZEND_SIGNALS
 # include "zend_signal.h"
@@ -191,7 +190,7 @@ struct _zend_class_entry {
 };
 
 typedef struct _zend_utility_functions {
-	void (*error_function)(PHP_ERROR_CB_FUNC_ARGS) ZEND_ATTRIBUTE_PTR_FORMAT(printf, 4, 0);
+	void (*error_function)(ZEND_ERROR_CB_FUNC_ARGS) ZEND_ATTRIBUTE_PTR_FORMAT(printf, 4, 0);
 	size_t (*printf_function)(const char *format, ...) ZEND_ATTRIBUTE_PTR_FORMAT(printf, 1, 2);
 	size_t (*write_function)(const char *str, size_t str_length);
 	FILE *(*fopen_function)(const char *filename, char **opened_path);
@@ -277,7 +276,7 @@ extern ZEND_API FILE *(*zend_fopen)(const char *filename, char **opened_path);
 extern ZEND_API void (*zend_block_interruptions)(void);
 extern ZEND_API void (*zend_unblock_interruptions)(void);
 extern ZEND_API void (*zend_ticks_function)(int ticks);
-extern ZEND_API void (*zend_error_cb)(PHP_ERROR_CB_FUNC_ARGS) ZEND_ATTRIBUTE_PTR_FORMAT(printf, 4, 0);
+extern ZEND_API void (*zend_error_cb)(ZEND_ERROR_CB_FUNC_ARGS) ZEND_ATTRIBUTE_PTR_FORMAT(printf, 4, 0);
 extern ZEND_API void (*zend_on_timeout)(int seconds);
 extern ZEND_API int (*zend_stream_open_function)(const char *filename, zend_file_handle *handle);
 extern size_t (*zend_vspprintf)(char **pbuf, size_t max_len, const char *format, va_list ap);
