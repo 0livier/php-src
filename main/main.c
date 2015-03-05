@@ -1243,8 +1243,8 @@ static void php_error_cb(PHP_ERROR_CB_FUNC_ARGS)
 				break;
 		}
 
-		php_error_display_cb(PHP_ERROR_CB_HOOK_ARGS_PASSTHRU);
 		php_error_log_cb(PHP_ERROR_CB_HOOK_ARGS_PASSTHRU);
+		php_error_display_cb(PHP_ERROR_CB_HOOK_ARGS_PASSTHRU);
 	}
 
 	php_error_process_cb(PHP_ERROR_CB_HOOK_ARGS_PASSTHRU);
