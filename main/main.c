@@ -1116,10 +1116,8 @@ static void php_error_process_cb(PHP_ERROR_CB_HOOK_ARGS)
 					zend_set_memory_limit(PG(memory_limit));
 					zend_objects_store_mark_destructed(&EG(objects_store));
 					zend_bailout();
-					return;
 				}
 			}
-			break;
 		}
 	}
 }
