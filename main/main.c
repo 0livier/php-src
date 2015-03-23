@@ -84,6 +84,7 @@
 #include "zend_extensions.h"
 #include "zend_ini.h"
 #include "zend_dtrace.h"
+#include "zend_errors.h"
 
 #include "php_content_types.h"
 #include "php_ticks.h"
@@ -988,139 +989,14 @@ PHPAPI void php_html_puts(const char *str, size_t size)
 }
 /* }}} */
 
-/* {{{ php_error_display_cb */
-static void php_error_display_cb(PHP_ERROR_CB_HOOK_ARGS)
-{
-	if (PG(display_errors) && ((module_initialized && !PG(during_request_startup)) || (PG(display_startup_errors)))) {
-		if (PG(xmlrpc_errors)) {
-			php_printf("<?xml version=\"1.0\"?><methodResponse><fault><value><struct><member><name>faultCode</name><value><int>%pd</int></value></member><member><name>faultString</name><value><string>%s:%s in %s on line %d</string></value></member></struct></value></fault></methodResponse>", PG(xmlrpc_error_number), error_type_str, PG(last_error_message), error_filename, error_lineno);
-		} else {
-			char *prepend_string = INI_STR("error_prepend_string");
-			char *append_string = INI_STR("error_append_string");
-
-			if (PG(html_errors)) {
-				if (type == E_ERROR || type == E_PARSE) {
-					zend_string *buf = php_escape_html_entities((unsigned char*)PG(last_error_message), strlen(PG(last_error_message)), 0, ENT_COMPAT, NULL);
-					php_printf("%s<br />\n<b>%s</b>:  %s in <b>%s</b> on line <b>%d</b><br />\n%s", STR_PRINT(prepend_string), error_type_str, buf->val, error_filename, error_lineno, STR_PRINT(append_string));
-					zend_string_free(buf);
-				} else {
-					php_printf("%s<br />\n<b>%s</b>:  %s in <b>%s</b> on line <b>%d</b><br />\n%s", STR_PRINT(prepend_string), error_type_str, PG(last_error_message), error_filename, error_lineno, STR_PRINT(append_string));
-				}
-			} else {
-				/* Write CLI/CGI errors to stderr if display_errors = "stderr" */
-				if ((!strcmp(sapi_module.name, "cli") || !strcmp(sapi_module.name, "cgi")) &&
-					PG(display_errors) == PHP_DISPLAY_ERRORS_STDERR
-					) {
-#ifdef PHP_WIN32
-					fprintf(stderr, "%s: %s in %s on line %u\n", error_type_str, PG(last_error_message), error_filename, error_lineno);
-					fflush(stderr);
-#else
-					fprintf(stderr, "%s: %s in %s on line %u\n", error_type_str, PG(last_error_message), error_filename, error_lineno);
-#endif
-				} else {
-					php_printf("%s\n%s: %s in %s on line %d\n%s", STR_PRINT(prepend_string), error_type_str, PG(last_error_message), error_filename, error_lineno, STR_PRINT(append_string));
-				}
-			}
+#define CALL_ERROR_HOOKS(HOOK_LIST) for ( \
+			hook = (void (**)(ZEND_ERROR_CB_HOOK_ARGS)) zend_llist_get_first_ex(&(PG(error_hooks)[HOOK_LIST]), &pos); \
+            hook != NULL; \
+            hook = zend_llist_get_next_ex(&(PG(error_hooks)[HOOK_LIST]), &pos)) { \
+			va_copy(copy, args); \
+			(*hook)(type, error_filename, error_lineno, format, copy, error_type_str); \
+			va_end(copy); \
 		}
-	}
-#if ZEND_DEBUG
-	if (PG(report_zend_debug)) {
-		zend_bool trigger_break;
-
-		switch (type) {
-		case E_ERROR:
-		case E_CORE_ERROR:
-		case E_COMPILE_ERROR:
-		case E_USER_ERROR:
-			trigger_break=1;
-			break;
-		default:
-			trigger_break=0;
-			break;
-		}
-		zend_output_debug_string(trigger_break, "%s(%d) : %s - %s", error_filename, error_lineno, error_type_str, PG(last_error_message));
-	}
-#endif
-}
-/* }}} */
-
-/* {{{ php_error_log_cb */
-static void php_error_log_cb(PHP_ERROR_CB_HOOK_ARGS)
-{
-	if (!module_initialized || PG(log_errors)) {
-		char *log_buffer;
-#ifdef PHP_WIN32
-		if (type == E_CORE_ERROR || type == E_CORE_WARNING) {
-			syslog(LOG_ALERT, "PHP %s: %s (%s)", error_type_str, PG(last_error_message), GetCommandLine());
-		}
-#endif
-		spprintf(&log_buffer, 0, "PHP %s:  %s in %s on line %d", error_type_str, PG(last_error_message), error_filename, error_lineno);
-		php_log_err(log_buffer);
-		efree(log_buffer);
-	}
-}
-/* }}} */
-
-/* {{{ php_error_process_cb */
-static void php_error_process_cb(PHP_ERROR_CB_HOOK_ARGS)
-{
-	/* Bail out if we can't recover */
-	switch (type) {
-		case E_CORE_ERROR:
-			if(!module_initialized) {
-				/* bad error in module startup - no way we can live with this */
-				exit(-2);
-			}
-		/* no break - intentionally */
-		case E_ERROR:
-		case E_RECOVERABLE_ERROR:
-		case E_PARSE:
-		case E_COMPILE_ERROR:
-		case E_USER_ERROR:
-		{ /* new block to allow variable definition */
-			/* eval() errors do not affect exit_status or response code */
-			zend_bool during_eval = 0;
-
-			if (type == E_PARSE) {
-				zend_execute_data *execute_data = EG(current_execute_data);
-
-				while (execute_data && (!execute_data->func || !ZEND_USER_CODE(execute_data->func->common.type))) {
-					execute_data = execute_data->prev_execute_data;
-				}
-
-				during_eval = (execute_data &&
-					execute_data->opline->opcode == ZEND_INCLUDE_OR_EVAL &&
-					execute_data->opline->extended_value == ZEND_EVAL);
-			}
-			if (!during_eval) {
-				EG(exit_status) = 255;
-			}
-			if (module_initialized) {
-				if (!PG(display_errors) &&
-				    !SG(headers_sent) &&
-					SG(sapi_headers).http_response_code == 200 &&
-				    !during_eval
-				) {
-					sapi_header_line ctr = {0};
-
-					ctr.line = "HTTP/1.0 500 Internal Server Error";
-					ctr.line_len = sizeof("HTTP/1.0 500 Internal Server Error") - 1;
-					sapi_header_op(SAPI_HEADER_REPLACE, &ctr);
-				}
-				/* the parser would return 1 (failure), we can bail out nicely */
-				if (type == E_PARSE) {
-					CG(parse_error) = 0;
-				} else {
-					/* restore memory limit */
-					zend_set_memory_limit(PG(memory_limit));
-					zend_objects_store_mark_destructed(&EG(objects_store));
-					zend_bailout();
-				}
-			}
-		}
-	}
-}
-/* }}} */
 
 /* {{{ php_error_cb
    extended error handling function */
@@ -1129,6 +1005,10 @@ static void php_error_cb(PHP_ERROR_CB_FUNC_ARGS)
 	char *buffer, *error_type_str;
 
 	int buffer_len, display;
+	
+	zend_llist_position pos;
+	void (**hook)(ZEND_ERROR_CB_HOOK_ARGS);
+	va_list copy;
 
 	buffer_len = (int)vspprintf(&buffer, PG(log_errors_max_len), format, args);
 
@@ -1242,11 +1122,12 @@ static void php_error_cb(PHP_ERROR_CB_FUNC_ARGS)
 				break;
 		}
 
-		php_error_log_cb(PHP_ERROR_CB_HOOK_ARGS_PASSTHRU);
-		php_error_display_cb(PHP_ERROR_CB_HOOK_ARGS_PASSTHRU);
+		CALL_ERROR_HOOKS(E_HOOK_LOG);
+		CALL_ERROR_HOOKS(E_HOOK_DISPLAY);
+		CALL_ERROR_HOOKS(E_HOOK_PROCESS);
 	}
 
-	php_error_process_cb(PHP_ERROR_CB_HOOK_ARGS_PASSTHRU);
+	CALL_ERROR_HOOKS(E_HOOK_BAILOUT);
 
 	if (!display) {
 		efree(buffer);
@@ -2117,6 +1998,9 @@ int php_module_startup(sapi_module_struct *sf, zend_module_entry *additional_mod
 	zuf.resolve_path_function = php_resolve_path_for_zend;
 	zend_startup(&zuf, NULL);
 
+	zend_init_error_hooks();
+	zend_register_error_hooks();
+
 #ifdef PHP_WIN32
 	{
 		OSVERSIONINFOEX *osvi = &EG(windows_version_info);
@@ -2433,6 +2317,8 @@ void php_module_shutdown(void)
 
 	php_output_shutdown();
 	php_shutdown_temporary_directory();
+	
+	zend_unregister_error_hooks();
 
 	module_initialized = 0;
 
